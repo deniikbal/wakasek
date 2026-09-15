@@ -1,5 +1,6 @@
 import { pool } from "@/lib/db"
 import { requireSession, parseBody, errorResponse } from "@/lib/api-helpers"
+import { VALID_ROLES } from "@/lib/roles"
 
 // PUT /api/users/[id] — update role
 export async function PUT(
@@ -16,7 +17,7 @@ export async function PUT(
 
   // Update role
   if (body.role) {
-    const role = body.role === "admin" ? "admin" : "user"
+    const role = VALID_ROLES.includes(body.role) ? body.role : "kurikulum"
     // Cegah admin menurunkan role diri sendiri (opsional proteksi)
     await pool.query(`UPDATE "user" SET role = $1, "updatedAt" = now() WHERE id = $2`, [role, id])
     return Response.json({ ok: true })

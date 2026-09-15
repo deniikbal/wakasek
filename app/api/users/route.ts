@@ -2,6 +2,7 @@ import { pool } from "@/lib/db"
 import { requireSession, parseBody, errorResponse } from "@/lib/api-helpers"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
+import { VALID_ROLES } from "@/lib/roles"
 
 // GET /api/users — list semua user (admin only)
 export async function GET() {
@@ -39,7 +40,8 @@ export async function POST(request: Request) {
     return errorResponse("Password minimal 6 karakter", 400)
   }
 
-  const role = body.role === "admin" ? "admin" : "user"
+  const VALID_ROLES_ARR = VALID_ROLES
+  const role = VALID_ROLES_ARR.includes(body.role) ? body.role : "kurikulum"
 
   try {
     const res = await auth.api.createUser({
@@ -48,7 +50,7 @@ export async function POST(request: Request) {
         name: body.name,
         email: body.email,
         password: body.password,
-        role,
+        role: "user", // default role dari better-auth, kita override via DB
       },
     })
 
@@ -57,7 +59,7 @@ export async function POST(request: Request) {
       return errorResponse(errMsg || "Gagal membuat user", 400)
     }
 
-    // Set role via DB (createUser mungkin tidak set role)
+    // Override role via DB (better-auth createUser hanya terima admin/user)
     const userId = (res as { user?: { id?: string }; id?: string }).user?.id || (res as { id?: string }).id
     if (userId) {
       await pool.query(`UPDATE "user" SET role = $1 WHERE id = $2`, [role, userId])

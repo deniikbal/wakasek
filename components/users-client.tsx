@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  Card, CardContent, CardHeader, CardTitle, CardDescription,
+  Card, CardContent,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,7 +14,25 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Spinner } from "@/components/ui/spinner"
-import { UsersIcon, ShieldCheckIcon, UserIcon, PlusIcon, Trash2Icon, PencilIcon } from "lucide-react"
+import { UsersIcon, ShieldCheckIcon, PlusIcon, Trash2Icon, PencilIcon, GraduationCapIcon, BookOpenIcon, WrenchIcon, MegaphoneIcon } from "lucide-react"
+import { ROLES, roleLabel, roleBadgeClass } from "@/lib/roles"
+
+// Icon per role (hanya untuk UI client)
+const ROLE_ICONS: Record<string, typeof ShieldCheckIcon> = {
+  admin: ShieldCheckIcon,
+  kurikulum: BookOpenIcon,
+  kesiswaan: GraduationCapIcon,
+  sarpras: WrenchIcon,
+  humas: MegaphoneIcon,
+}
+
+const ROLE_COLORS: Record<string, { color: string; bg: string }> = {
+  admin: { color: "text-amber-600", bg: "bg-amber-50" },
+  kurikulum: { color: "text-blue-600", bg: "bg-blue-50" },
+  kesiswaan: { color: "text-green-600", bg: "bg-green-50" },
+  sarpras: { color: "text-purple-600", bg: "bg-purple-50" },
+  humas: { color: "text-pink-600", bg: "bg-pink-50" },
+}
 
 type UserRow = {
   id: string
@@ -26,7 +44,7 @@ type UserRow = {
   createdAt: string
 }
 
-type Stats = { total: number; admin: number; user: number }
+type Stats = Record<string, number>
 
 export function UsersClient({
   users: initial,
@@ -44,14 +62,14 @@ export function UsersClient({
   const [error, setError] = useState("")
 
   // Form create
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "user" })
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "kurikulum" })
 
   // Form edit
-  const [editForm, setEditForm] = useState({ name: "", role: "user" })
+  const [editForm, setEditForm] = useState({ name: "", role: "kurikulum" })
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase()
-    return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+    return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || roleLabel(u.role).toLowerCase().includes(q)
   })
 
   async function handleCreate() {
@@ -66,7 +84,7 @@ export function UsersClient({
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Gagal")
       setCreateOpen(false)
-      setForm({ name: "", email: "", password: "", role: "user" })
+      setForm({ name: "", email: "", password: "", role: "kurikulum" })
       router.refresh()
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal membuat user")
@@ -116,12 +134,6 @@ export function UsersClient({
     setEditUser(u)
     setEditForm({ name: u.name, role: u.role })
   }
-
-  const statCards = [
-    { label: "Total User", value: stats.total, icon: UsersIcon, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Admin", value: stats.admin, icon: ShieldCheckIcon, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "User", value: stats.user, icon: UserIcon, color: "text-green-600", bg: "bg-green-50" },
-  ]
 
   return (
     <div className="space-y-6">
@@ -182,8 +194,9 @@ export function UsersClient({
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value })}
                 >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
+                  {ROLES.map((r) => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
                 </select>
               </div>
               {error && (
@@ -202,18 +215,19 @@ export function UsersClient({
       </div>
 
       {/* Stat cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        {statCards.map((s) => {
-          const Icon = s.icon
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {ROLES.map((r) => {
+          const Icon = ROLE_ICONS[r.value] || UsersIcon
+          const colors = ROLE_COLORS[r.value] || { color: "text-gray-600", bg: "bg-gray-50" }
           return (
-            <Card key={s.label}>
+            <Card key={r.value}>
               <CardContent className="flex items-center gap-3 p-4">
-                <div className={`grid size-10 place-items-center rounded-lg ${s.bg}`}>
-                  <Icon className={`size-5 ${s.color}`} />
+                <div className={`grid size-10 place-items-center rounded-lg ${colors.bg}`}>
+                  <Icon className={`size-5 ${colors.color}`} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-2xl font-bold leading-tight">{s.value}</span>
-                  <span className="text-xs text-muted-foreground">{s.label}</span>
+                  <span className="text-2xl font-bold leading-tight">{stats[r.value] ?? 0}</span>
+                  <span className="text-xs text-muted-foreground">{r.label}</span>
                 </div>
               </CardContent>
             </Card>
@@ -224,7 +238,7 @@ export function UsersClient({
       {/* Search */}
       <div className="flex items-center gap-2">
         <Input
-          placeholder="Cari nama atau email…"
+          placeholder="Cari nama, email, atau role…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
@@ -251,13 +265,9 @@ export function UsersClient({
                   <td className="px-4 py-3 font-medium">{u.name}</td>
                   <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
                   <td className="px-4 py-3">
-                    {u.role === "admin" ? (
-                      <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">
-                        Admin
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">User</Badge>
-                    )}
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${roleBadgeClass(u.role)}`}>
+                      {roleLabel(u.role)}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     {u.banned ? (
@@ -267,7 +277,7 @@ export function UsersClient({
                         Aktif
                       </Badge>
                     ) : (
-                      <Badge variant="outline">Beluk verifikasi</Badge>
+                      <Badge variant="outline">Belum verifikasi</Badge>
                     )}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">
@@ -338,8 +348,9 @@ export function UsersClient({
                   value={editForm.role}
                   onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
                 >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
+                  {ROLES.map((r) => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
                 </select>
               </div>
               <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
@@ -352,12 +363,16 @@ export function UsersClient({
             <Button
               onClick={() => {
                 if (!editUser) return
+                let changed = false
                 if (editForm.name !== editUser.name) {
                   handleUpdateName(editUser.id, editForm.name)
+                  changed = true
                 }
                 if (editForm.role !== editUser.role) {
                   handleUpdateRole(editUser.id, editForm.role)
+                  changed = true
                 }
+                if (!changed) setEditUser(null)
               }}
             >
               Simpan
