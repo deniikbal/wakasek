@@ -16,35 +16,40 @@ import { headers } from "next/headers"
 
 export const dynamic = "force-dynamic"
 
-async function getStats() {
+async function getStats(bidang: string | null = null) {
   const client = await pool.connect()
+  // Untuk non-admin: batasi hanya proker/realisasi bidang sendiri
+  const filterBidang = bidang ? `WHERE bidang = $1` : ""
+  const params = bidang ? [bidang] : []
   try {
     // Hitung jumlah proker per bidang
     const prokerPerBidang = await client.query(`
       SELECT bidang, COUNT(*)::int as jumlah
-      FROM proker
+      FROM proker ${bidang ? `WHERE bidang = $1` : ""}
       GROUP BY bidang
-    `)
+    `, params)
 
     // Hitung total anggaran
     const totalAnggaran = await client.query(`
-      SELECT COALESCE(SUM(anggaran), 0)::bigint as total FROM proker
-    `)
+      SELECT COALESCE(SUM(anggaran), 0)::bigint as total FROM proker ${filterBidang}
+    `, params)
 
     // Hitung realisasi per status
     const realisasiPerStatus = await client.query(`
-      SELECT status, COUNT(*)::int as jumlah
-      FROM realisasi
-      GROUP BY status
-    `)
+      SELECT r.status, COUNT(*)::int as jumlah
+      FROM realisasi r
+      JOIN proker p ON p.id = r.proker_id
+      ${bidang ? `WHERE p.bidang = $1` : ""}
+      GROUP BY r.status
+    `, params)
 
     // Recent proker
     const recentProker = await client.query(`
       SELECT id, bidang, nama_kegiatan, tahun_ajaran, created_at
-      FROM proker
+      FROM proker ${filterBidang}
       ORDER BY created_at DESC
       LIMIT 5
-    `)
+    `, params)
 
     return {
       prokerPerBidang: prokerPerBidang.rows,
@@ -57,9 +62,18 @@ async function getStats() {
   }
 }
 
+const ROLE_TO_BIDANG: Record<string, string> = {
+  kurikulum: "kurikulum",
+  kesiswaan: "kesiswaan",
+  sarpras: "sarpras",
+  humas: "humas",
+}
+
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() })
-  const stats = await getStats()
+  const userRole = session?.user.role || ""
+  const bidangFilter = userRole === "admin" ? null : (ROLE_TO_BIDANG[userRole] || null)
+  const stats = await getStats(bidangFilter)
 
   const prokerMap: Record<string, number> = {}
   stats.prokerPerBidang.forEach((r: { bidang: string; jumlah: number }) => {

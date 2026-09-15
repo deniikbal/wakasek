@@ -9,18 +9,37 @@ const VALID_STATUS: StatusKegiatan[] = [
   "tidak_jadi",
 ]
 
-// GET /api/realisasi — list semua proker + realisasinya (semua bidang)
+// GET /api/realisasi — list proker + realisasinya
+// Admin lihat semua. Role wakasek hanya lihat bidang sendiri.
+const ROLE_TO_BIDANG: Record<string, string> = {
+  kurikulum: "kurikulum",
+  kesiswaan: "kesiswaan",
+  sarpras: "sarpras",
+  humas: "humas",
+}
+
 export async function GET() {
   try {
-    await requireSession()
-    // Ambil semua proker
-    const prokerRes = await pool.query(`
-      SELECT id, bidang, tahun_ajaran, nama_kegiatan, deskripsi,
-             bulan_pelaksanaan, penanggung_jawab, anggaran,
-             sumber_dana, dibuat_oleh, created_at, updated_at
-      FROM proker
-      ORDER BY created_at DESC
-    `)
+    const session = await requireSession()
+    const userRole = session.user.role || ""
+    const bidang = userRole !== "admin" ? ROLE_TO_BIDANG[userRole] : null
+
+    // Ambil proker (filter bidang untuk non-admin)
+    const prokerRes = bidang
+      ? await pool.query(`
+          SELECT id, bidang, tahun_ajaran, nama_kegiatan, deskripsi,
+                 bulan_pelaksanaan, penanggung_jawab, anggaran,
+                 sumber_dana, dibuat_oleh, created_at, updated_at
+          FROM proker WHERE bidang = $1
+          ORDER BY created_at DESC
+        `, [bidang])
+      : await pool.query(`
+          SELECT id, bidang, tahun_ajaran, nama_kegiatan, deskripsi,
+                 bulan_pelaksanaan, penanggung_jawab, anggaran,
+                 sumber_dana, dibuat_oleh, created_at, updated_at
+          FROM proker
+          ORDER BY created_at DESC
+        `)
 
     if (prokerRes.rows.length === 0) return Response.json([])
 
@@ -78,13 +97,20 @@ export async function POST(request: Request) {
       return errorResponse("Status tidak valid")
     }
 
-    // Cek proker exists
+    // Cek proker exists + akses bidang (non-admin hanya bidang sendiri)
     const prokerCheck = await pool.query(
-      `SELECT id FROM proker WHERE id = $1`,
+      `SELECT id, bidang FROM proker WHERE id = $1`,
       [body.proker_id]
     )
     if (prokerCheck.rows.length === 0) {
       return errorResponse("Proker tidak ditemukan", 404)
+    }
+    const userRoleR = session.user.role || ""
+    if (userRoleR !== "admin") {
+      const allowed = ROLE_TO_BIDANG[userRoleR]
+      if (!allowed || prokerCheck.rows[0].bidang !== allowed) {
+        return errorResponse("Anda tidak memiliki akses ke proker bidang ini", 403)
+      }
     }
 
     // Cek unique (proker_id, bulan, tahun)

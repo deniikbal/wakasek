@@ -9,6 +9,13 @@ const VALID_BIDANG: BidangWakasek[] = [
   "humas",
 ]
 
+const ROLE_TO_BIDANG: Record<string, BidangWakasek> = {
+  kurikulum: "kurikulum",
+  kesiswaan: "kesiswaan",
+  sarpras: "sarpras",
+  humas: "humas",
+}
+
 interface RouteParams {
   params: Promise<{ id: string }>
 }
@@ -28,9 +35,11 @@ export async function GET(_req: Request, { params }: RouteParams) {
 }
 
 // PUT /api/proker/[id]
+// Non-admin hanya bisa edit proker bidang sendiri & tidak bisa ganti bidang.
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    await requireSession()
+    const session = await requireSession()
+    const userRole = session.user.role || ""
     const { id } = await params
     const body = await parseBody<{
       bidang?: string
@@ -44,14 +53,30 @@ export async function PUT(request: Request, { params }: RouteParams) {
     }>(request)
 
     // Cek exists
-    const exists = await pool.query(`SELECT id FROM proker WHERE id = $1`, [id])
-    if (exists.rows.length === 0)
+    const existing = await pool.query(`SELECT id, bidang FROM proker WHERE id = $1`, [id])
+    if (existing.rows.length === 0)
       return errorResponse("Proker tidak ditemukan", 404)
 
-    // Validasi
-    if (body.bidang && !VALID_BIDANG.includes(body.bidang as BidangWakasek)) {
-      return errorResponse("Bidang tidak valid")
+    // Cek akses: non-admin hanya bisa edit bidang sendiri
+    const prokerBidang = existing.rows[0].bidang as string
+    if (userRole !== "admin") {
+      const allowedBidang = ROLE_TO_BIDANG[userRole]
+      if (!allowedBidang || prokerBidang !== allowedBidang) {
+        return errorResponse("Anda tidak memiliki akses ke proker bidang ini", 403)
+      }
+      // Non-admin tidak boleh ganti bidang
+      if (body.bidang && body.bidang !== allowedBidang) {
+        return errorResponse("Anda tidak dapat mengubah bidang proker", 403)
+      }
+      // Paksa bidang tetap
+      body.bidang = allowedBidang
+    } else {
+      // Admin bebas, tapi validasi
+      if (body.bidang && !VALID_BIDANG.includes(body.bidang as BidangWakasek)) {
+        return errorResponse("Bidang tidak valid")
+      }
     }
+
     if (body.bulan_pelaksanaan !== undefined) {
       if (
         !Array.isArray(body.bulan_pelaksanaan) ||
@@ -98,16 +123,27 @@ export async function PUT(request: Request, { params }: RouteParams) {
 }
 
 // DELETE /api/proker/[id]
+// Non-admin hanya bisa hapus proker bidang sendiri.
 export async function DELETE(_req: Request, { params }: RouteParams) {
   try {
-    await requireSession()
+    const session = await requireSession()
+    const userRole = session.user.role || ""
     const { id } = await params
-    const res = await pool.query(
-      `DELETE FROM proker WHERE id = $1 RETURNING id`,
-      [id]
-    )
-    if (res.rows.length === 0)
+
+    // Cek exists & akses
+    const existing = await pool.query(`SELECT id, bidang FROM proker WHERE id = $1`, [id])
+    if (existing.rows.length === 0)
       return errorResponse("Proker tidak ditemukan", 404)
+
+    if (userRole !== "admin") {
+      const allowedBidang = ROLE_TO_BIDANG[userRole]
+      const prokerBidang = existing.rows[0].bidang as string
+      if (!allowedBidang || prokerBidang !== allowedBidang) {
+        return errorResponse("Anda tidak memiliki akses ke proker bidang ini", 403)
+      }
+    }
+
+    await pool.query(`DELETE FROM proker WHERE id = $1`, [id])
     return Response.json({ success: true })
   } catch (e) {
     if (e instanceof Response) return e

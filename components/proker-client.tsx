@@ -14,8 +14,6 @@ import {
   DialogFooter,
   DialogTitle,
   DialogDescription,
-  DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog"
 import {
   Select,
@@ -62,36 +60,82 @@ interface ProkerFormState {
   sumber_dana: string
 }
 
-const emptyForm: ProkerFormState = {
-  bidang: "kurikulum",
-  tahun_ajaran: new Date().getFullYear() + "/" + (new Date().getFullYear() + 1),
-  nama_kegiatan: "",
-  deskripsi: "",
-  bulan_pelaksanaan: [],
-  penanggung_jawab: "",
-  anggaran: "0",
-  sumber_dana: "",
-}
+type PJOption = { id: string; name: string; email: string }
 
-export function ProkerClient() {
+export function ProkerClient({
+  userRole,
+  bidangUser,
+  isAdmin,
+}: {
+  userRole: string
+  bidangUser: string | null
+  isAdmin: boolean
+}) {
   const [proker, setProker] = useState<Proker[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   // Filter
   const [search, setSearch] = useState("")
-  const [filterBidang, setFilterBidang] = useState<string>("all")
+  const [filterBidang, setFilterBidang] = useState<string>(
+    isAdmin ? "all" : (bidangUser || "all")
+  )
 
   // Dialog create/edit
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [form, setForm] = useState<ProkerFormState>(emptyForm)
+  const [form, setForm] = useState<ProkerFormState>(getDefaultForm(bidangUser))
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+
+  // PJ options (dari user dengan role sama)
+  const [pjOptions, setPjOptions] = useState<PJOption[]>([])
 
   // Delete dialog
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  function getDefaultForm(bidang: string | null): ProkerFormState {
+    return {
+      bidang: (bidang as BidangWakasek) || "kurikulum",
+      tahun_ajaran: new Date().getFullYear() + "/" + (new Date().getFullYear() + 1),
+      nama_kegiatan: "",
+      deskripsi: "",
+      bulan_pelaksanaan: [],
+      penanggung_jawab: "",
+      anggaran: "0",
+      sumber_dana: "",
+    }
+  }
+
+  // Fetch PJ options — user dengan role yang sama
+  const fetchPJ = useCallback(async () => {
+    const targetRole = isAdmin ? null : userRole
+    const url = targetRole
+      ? `/api/users/by-role?role=${targetRole}`
+      : `/api/users/by-role`
+    try {
+      const res = await fetch(url)
+      if (!res.ok) return
+      const data = await res.json() as Record<string, PJOption[]>
+      // Flat atau filter
+      if (isAdmin) {
+        // Admin: semua wakasek role
+        const all: PJOption[] = []
+        for (const [role, users] of Object.entries(data)) {
+          if (["kurikulum", "kesiswaan", "sarpras", "humas"].includes(role)) {
+            all.push(...users)
+          }
+        }
+        setPjOptions(all)
+      } else {
+        // Non-admin: hanya role sendiri
+        setPjOptions(data[userRole] || [])
+      }
+    } catch {
+      // silent
+    }
+  }, [isAdmin, userRole])
 
   const fetchProker = useCallback(async () => {
     setLoading(true)
@@ -110,19 +154,23 @@ export function ProkerClient() {
 
   useEffect(() => {
     fetchProker()
-  }, [fetchProker])
+    fetchPJ()
+  }, [fetchProker, fetchPJ])
 
+  // Auto-filter bidang untuk non-admin
   const filtered = proker.filter((p) => {
     const matchSearch =
       p.nama_kegiatan.toLowerCase().includes(search.toLowerCase()) ||
       p.penanggung_jawab.toLowerCase().includes(search.toLowerCase()) ||
       p.tahun_ajaran.includes(search)
-    const matchBidang = filterBidang === "all" || p.bidang === filterBidang
+    const matchBidang = isAdmin
+      ? (filterBidang === "all" || p.bidang === filterBidang)
+      : true // API sudah filter, tampil semua
     return matchSearch && matchBidang
   })
 
   function openCreate() {
-    setForm(emptyForm)
+    setForm(getDefaultForm(bidangUser))
     setEditId(null)
     setFormError(null)
     setDialogOpen(true)
@@ -196,7 +244,10 @@ export function ProkerClient() {
     setDeleting(true)
     try {
       const res = await fetch(`/api/proker/${deleteId}`, { method: "DELETE" })
-      if (!res.ok) throw new Error("Gagal menghapus")
+      if (!res.ok) {
+        const d = await res.json().catch(() => null)
+        throw new Error(d?.error || "Gagal menghapus")
+      }
       setDeleteId(null)
       await fetchProker()
     } catch (err) {
@@ -205,6 +256,13 @@ export function ProkerClient() {
       setDeleting(false)
     }
   }
+
+  // Bidang yang tersedia di form:
+  // - Admin: semua bidang
+  // - Non-admin: hanya bidang sendiri (locked)
+  const formBidangOptions = isAdmin
+    ? BIDANG_OPTIONS
+    : BIDANG_OPTIONS.filter((b) => b.value === bidangUser)
 
   return (
     <div className="space-y-4">
@@ -220,23 +278,31 @@ export function ProkerClient() {
               className="pl-7 sm:w-64"
             />
           </div>
-          <Select
-            value={filterBidang}
-            onValueChange={(v) => setFilterBidang(v as string)}
-          >
-            <SelectTrigger className="sm:w-40" size="sm">
-              <SelectValue />
-              <SelectIcon />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Bidang</SelectItem>
-              {BIDANG_OPTIONS.map((b) => (
-                <SelectItem key={b.value} value={b.value}>
-                  {b.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Filter bidang hanya untuk admin */}
+          {isAdmin && (
+            <Select
+              value={filterBidang}
+              onValueChange={(v) => setFilterBidang(v as string)}
+            >
+              <SelectTrigger className="sm:w-40" size="sm">
+                <SelectValue />
+                <SelectIcon />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Bidang</SelectItem>
+                {BIDANG_OPTIONS.map((b) => (
+                  <SelectItem key={b.value} value={b.value}>
+                    {b.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {!isAdmin && bidangUser && (
+            <Badge variant="secondary" className="h-8">
+              {bidangLabel(bidangUser as BidangWakasek)}
+            </Badge>
+          )}
         </div>
         <Button onClick={openCreate}>
           <PlusIcon /> Tambah Proker
@@ -260,7 +326,7 @@ export function ProkerClient() {
           <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
             <ClipboardListIcon className="size-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              {search || filterBidang !== "all"
+              {search
                 ? "Tidak ada proker yang cocok dengan filter."
                 : "Belum ada program kerja. Klik \"Tambah Proker\" untuk memulai."}
             </p>
@@ -270,7 +336,7 @@ export function ProkerClient() {
             <TableHeader>
               <TableRow>
                 <TableHead>Kegiatan</TableHead>
-                <TableHead className="hidden md:table-cell">Bidang</TableHead>
+                {isAdmin && <TableHead className="hidden md:table-cell">Bidang</TableHead>}
                 <TableHead className="hidden sm:table-cell">Tahun</TableHead>
                 <TableHead className="hidden lg:table-cell">Bulan</TableHead>
                 <TableHead className="hidden lg:table-cell">PJ</TableHead>
@@ -282,9 +348,11 @@ export function ProkerClient() {
               {filtered.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell className="font-medium">{p.nama_kegiatan}</TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Badge variant="outline">{bidangLabel(p.bidang)}</Badge>
-                  </TableCell>
+                  {isAdmin && (
+                    <TableCell className="hidden md:table-cell">
+                      <Badge variant="outline">{bidangLabel(p.bidang)}</Badge>
+                    </TableCell>
+                  )}
                   <TableCell className="hidden sm:table-cell text-muted-foreground">
                     {p.tahun_ajaran}
                   </TableCell>
@@ -352,22 +420,35 @@ export function ProkerClient() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="bidang">Bidang *</Label>
-                <Select
-                  value={form.bidang}
-                  onValueChange={(v) => setForm({ ...form, bidang: v as BidangWakasek })}
-                >
-                  <SelectTrigger id="bidang">
-                    <SelectValue />
-                    <SelectIcon />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BIDANG_OPTIONS.map((b) => (
-                      <SelectItem key={b.value} value={b.value}>
-                        {b.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isAdmin ? (
+                  <Select
+                    value={form.bidang}
+                    onValueChange={(v) => {
+                      const newBidang = v as BidangWakasek
+                      setForm({ ...form, bidang: newBidang, penanggung_jawab: "" })
+                      // Refresh PJ list for new bidang
+                      fetchPJForBidang(newBidang).then(setPjOptions)
+                    }}
+                  >
+                    <SelectTrigger id="bidang">
+                      <SelectValue />
+                      <SelectIcon />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {formBidangOptions.map((b) => (
+                        <SelectItem key={b.value} value={b.value}>
+                          {b.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    value={bidangLabel(form.bidang)}
+                    disabled
+                    className="bg-muted/50"
+                  />
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="tahun">Tahun Ajaran *</Label>
@@ -408,13 +489,37 @@ export function ProkerClient() {
 
             <div className="space-y-1.5">
               <Label htmlFor="pj">Penanggung Jawab *</Label>
-              <Input
-                id="pj"
-                value={form.penanggung_jawab}
-                onChange={(e) => setForm({ ...form, penanggung_jawab: e.target.value })}
-                required
-                placeholder="Nama lengkap"
-              />
+              {pjOptions.length > 0 ? (
+                <Select
+                  value={form.penanggung_jawab}
+                  onValueChange={(v) => setForm({ ...form, penanggung_jawab: v as string })}
+                >
+                  <SelectTrigger id="pj">
+                    <SelectValue placeholder="Pilih penanggung jawab" />
+                    <SelectIcon />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pjOptions.map((pj) => (
+                      <SelectItem key={pj.id} value={pj.name}>
+                        {pj.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id="pj"
+                  value={form.penanggung_jawab}
+                  onChange={(e) => setForm({ ...form, penanggung_jawab: e.target.value })}
+                  required
+                  placeholder="Nama lengkap"
+                />
+              )}
+              {pjOptions.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Belum ada user dengan role ini. Isi nama manual.
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -458,7 +563,9 @@ export function ProkerClient() {
             )}
 
             <DialogFooter>
-              <DialogClose render={<Button variant="outline" type="button">Batal</Button>} />
+              <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
+                Batal
+              </Button>
               <Button type="submit" disabled={saving}>
                 {saving ? <Spinner /> : null}
                 {saving ? "Menyimpan..." : editId ? "Simpan Perubahan" : "Tambah Proker"}
@@ -486,7 +593,7 @@ export function ProkerClient() {
             </div>
           )}
           <DialogFooter>
-            <DialogClose render={<Button variant="outline" type="button">Batal</Button>} />
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Batal</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
               {deleting ? <Spinner /> : <TrashIcon />}
               {deleting ? "Menghapus..." : "Hapus"}
@@ -496,4 +603,23 @@ export function ProkerClient() {
       </Dialog>
     </div>
   )
+}
+
+// Helper: fetch PJ for specific bidang (admin changing bidang in form)
+async function fetchPJForBidang(bidang: BidangWakasek): Promise<PJOption[]> {
+  const roleMap: Record<BidangWakasek, string> = {
+    kurikulum: "kurikulum",
+    kesiswaan: "kesiswaan",
+    sarpras: "sarpras",
+    humas: "humas",
+  }
+  const role = roleMap[bidang]
+  try {
+    const res = await fetch(`/api/users/by-role?role=${role}`)
+    if (!res.ok) return []
+    const data = await res.json() as Record<string, PJOption[]>
+    return data[role] || []
+  } catch {
+    return []
+  }
 }

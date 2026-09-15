@@ -9,17 +9,40 @@ const VALID_BIDANG: BidangWakasek[] = [
   "humas",
 ]
 
-// GET /api/proker — list semua proker (semua user bisa lihat semua bidang)
+// Mapping role wakasek → bidang
+const ROLE_TO_BIDANG: Record<string, BidangWakasek> = {
+  kurikulum: "kurikulum",
+  kesiswaan: "kesiswaan",
+  sarpras: "sarpras",
+  humas: "humas",
+}
+
+// GET /api/proker — list proker
+// Admin lihat semua. Role wakasek hanya lihat bidang sendiri.
 export async function GET() {
   try {
-    await requireSession()
-    const res = await pool.query(`
+    const session = await requireSession()
+    const userRole = session.user.role || ""
+
+    let query = `
       SELECT id, bidang, tahun_ajaran, nama_kegiatan, deskripsi,
              bulan_pelaksanaan, penanggung_jawab, anggaran,
              sumber_dana, dibuat_oleh, created_at, updated_at
       FROM proker
-      ORDER BY created_at DESC
-    `)
+    `
+    const params: unknown[] = []
+
+    if (userRole !== "admin") {
+      const bidang = ROLE_TO_BIDANG[userRole]
+      if (bidang) {
+        query += ` WHERE bidang = $1`
+        params.push(bidang)
+      }
+    }
+
+    query += ` ORDER BY created_at DESC`
+
+    const res = await pool.query(query, params)
     return Response.json(res.rows)
   } catch (e) {
     if (e instanceof Response) return e
@@ -28,9 +51,12 @@ export async function GET() {
 }
 
 // POST /api/proker — create proker baru
+// Admin bebas pilih bidang. Role wakasek dipaksa bidang = bidang sendiri.
 export async function POST(request: Request) {
   try {
     const session = await requireSession()
+    const userRole = session.user.role || ""
+
     const body = await parseBody<{
       bidang?: string
       tahun_ajaran?: string
@@ -42,10 +68,23 @@ export async function POST(request: Request) {
       sumber_dana?: string
     }>(request)
 
-    // Validasi
-    if (!body.bidang || !VALID_BIDANG.includes(body.bidang as BidangWakasek)) {
-      return errorResponse("Bidang tidak valid")
+    // Tentukan bidang:
+    // - admin: pakai bidang dari form
+    // - role wakasek: paksa ke bidang sesuai role
+    let bidang: string
+    if (userRole === "admin") {
+      if (!body.bidang || !VALID_BIDANG.includes(body.bidang as BidangWakasek)) {
+        return errorResponse("Bidang tidak valid")
+      }
+      bidang = body.bidang
+    } else {
+      const mapped = ROLE_TO_BIDANG[userRole]
+      if (!mapped) {
+        return errorResponse("Role Anda tidak terkait bidang wakasek manapun", 403)
+      }
+      bidang = mapped
     }
+
     if (!body.tahun_ajaran?.trim()) {
       return errorResponse("Tahun ajaran wajib diisi")
     }
@@ -79,7 +118,7 @@ export async function POST(request: Request) {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [
-        body.bidang,
+        bidang,
         body.tahun_ajaran.trim(),
         body.nama_kegiatan.trim(),
         body.deskripsi?.trim() || null,

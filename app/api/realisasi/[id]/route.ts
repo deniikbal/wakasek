@@ -9,8 +9,29 @@ const VALID_STATUS: StatusKegiatan[] = [
   "tidak_jadi",
 ]
 
+const ROLE_TO_BIDANG: Record<string, string> = {
+  kurikulum: "kurikulum",
+  kesiswaan: "kesiswaan",
+  sarpras: "sarpras",
+  humas: "humas",
+}
+
 interface RouteParams {
   params: Promise<{ id: string }>
+}
+
+// Helper: cek akses user ke realisasi via bidang proker induknya
+async function checkAkses(client: typeof pool, id: string, userRole: string) {
+  const res = await client.query(
+    `SELECT r.id, p.bidang FROM realisasi r
+     JOIN proker p ON p.id = r.proker_id
+     WHERE r.id = $1`,
+    [id]
+  )
+  if (res.rows.length === 0) return { found: false as const }
+  if (userRole === "admin") return { found: true as const, allowed: true as const }
+  const allowed = ROLE_TO_BIDANG[userRole]
+  return { found: true as const, allowed: res.rows[0].bidang === allowed }
 }
 
 // GET /api/realisasi/[id]
@@ -31,7 +52,8 @@ export async function GET(_req: Request, { params }: RouteParams) {
 // PUT /api/realisasi/[id]
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    await requireSession()
+    const session = await requireSession()
+    const userRole = session.user.role || ""
     const { id } = await params
     const body = await parseBody<{
       bulan?: number
@@ -40,13 +62,17 @@ export async function PUT(request: Request, { params }: RouteParams) {
       catatan?: string
     }>(request)
 
-    // Cek exists
+    // Cek exists + akses bidang
+    const akses = await checkAkses(pool, id, userRole)
+    if (!akses.found)
+      return errorResponse("Realisasi tidak ditemukan", 404)
+    if (!akses.allowed)
+      return errorResponse("Anda tidak memiliki akses ke realisasi bidang ini", 403)
+
     const exists = await pool.query(
       `SELECT id, proker_id FROM realisasi WHERE id = $1`,
       [id]
     )
-    if (exists.rows.length === 0)
-      return errorResponse("Realisasi tidak ditemukan", 404)
 
     const prokerId = exists.rows[0].proker_id
 
@@ -114,14 +140,18 @@ export async function PUT(request: Request, { params }: RouteParams) {
 // DELETE /api/realisasi/[id]
 export async function DELETE(_req: Request, { params }: RouteParams) {
   try {
-    await requireSession()
+    const session = await requireSession()
+    const userRole = session.user.role || ""
     const { id } = await params
-    const res = await pool.query(
-      `DELETE FROM realisasi WHERE id = $1 RETURNING id`,
-      [id]
-    )
-    if (res.rows.length === 0)
+
+    // Cek akses bidang
+    const akses = await checkAkses(pool, id, userRole)
+    if (!akses.found)
       return errorResponse("Realisasi tidak ditemukan", 404)
+    if (!akses.allowed)
+      return errorResponse("Anda tidak memiliki akses ke realisasi bidang ini", 403)
+
+    await pool.query(`DELETE FROM realisasi WHERE id = $1`, [id])
     return Response.json({ success: true })
   } catch (e) {
     if (e instanceof Response) return e
