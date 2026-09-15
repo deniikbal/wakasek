@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
-  DialogFooter, DialogTrigger, DialogClose,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { Spinner } from "@/components/ui/spinner"
 import { UsersIcon, ShieldCheckIcon, UserIcon, PlusIcon, Trash2Icon, PencilIcon } from "lucide-react"
@@ -132,15 +132,11 @@ export function UsersClient({
             Kelola akun pengguna dan role akses
           </p>
         </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <PlusIcon className="size-4" />
+          Tambah User
+        </Button>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger
-            render={() => (
-              <Button>
-                <PlusIcon className="size-4" />
-                Tambah User
-              </Button>
-            )}
-          />
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Tambah User Baru</DialogTitle>
@@ -195,7 +191,7 @@ export function UsersClient({
               )}
             </div>
             <DialogFooter>
-              <DialogClose render={() => <Button variant="outline" disabled={loading}>Batal</Button>} />
+              <Button variant="outline" disabled={loading} onClick={() => setCreateOpen(false)}>Batal</Button>
               <Button onClick={handleCreate} disabled={loading}>
                 {loading ? <Spinner className="size-4" /> : null}
                 Simpan
@@ -352,7 +348,7 @@ export function UsersClient({
             </div>
           )}
           <DialogFooter>
-            <DialogClose render={() => <Button variant="outline">Batal</Button>} />
+            <Button variant="outline" onClick={() => setEditUser(null)}>Batal</Button>
             <Button
               onClick={() => {
                 if (!editUser) return
