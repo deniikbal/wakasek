@@ -78,8 +78,22 @@ function DropdownMenuSeparator({
   )
 }
 
+function DropdownMenuGroup({
+  className,
+  ...props
+}: React.ComponentProps<typeof MenuPrimitive.Group>) {
+  return (
+    <MenuPrimitive.Group
+      data-slot="dropdown-menu-group"
+      className={cn("p-1", className)}
+      {...props}
+    />
+  )
+}
+
 export {
   DropdownMenu,
+  DropdownMenuGroup,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,

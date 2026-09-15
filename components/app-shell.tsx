@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import {
   DropdownMenu,
+  DropdownMenuGroup,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -112,10 +113,12 @@ export function AppShell({
               }
             />
             <DropdownMenuContent align="start" side="top">
-              <DropdownMenuItem onClick={handleSignOut} disabled={signingOut}>
-                {signingOut ? <Spinner className="size-4" /> : <LogOutIcon />}
-                Keluar
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={handleSignOut} disabled={signingOut}>
+                  {signingOut ? <Spinner className="size-4" /> : <LogOutIcon />}
+                  Keluar
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
