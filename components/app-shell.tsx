@@ -14,6 +14,7 @@ import {
   XIcon,
   LogOutIcon,
   ShieldCheckIcon,
+  UsersIcon,
 } from "lucide-react"
 import { cn } from "cn"
 
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
   { href: "/proker", label: "Program Kerja", icon: ClipboardListIcon },
   { href: "/realisasi", label: "Realisasi", icon: CheckCircle2Icon },
+  { href: "/users", label: "User", icon: UsersIcon, adminOnly: true },
 ]
 
 export function AppShell({
@@ -62,7 +64,7 @@ export function AppShell({
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 p-3">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => !item.adminOnly || user.role === "admin").map((item) => {
             const active = pathname === item.href || pathname.startsWith(item.href + "/")
             const Icon = item.icon
             return (
@@ -139,7 +141,7 @@ export function AppShell({
             />
             <aside className="absolute left-0 top-14 h-[calc(100svh-3.5rem)] w-64 border-r bg-sidebar shadow-xl">
               <nav className="flex flex-col gap-1 p-3">
-                {NAV_ITEMS.map((item) => {
+                {NAV_ITEMS.filter((item) => !item.adminOnly || user.role === "admin").map((item) => {
                   const active = pathname === item.href || pathname.startsWith(item.href + "/")
                   const Icon = item.icon
                   return (
