@@ -7,14 +7,6 @@ import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import {
-  DropdownMenu,
-  DropdownMenuGroup,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
-import {
   LayoutDashboardIcon,
   ClipboardListIcon,
   CheckCircle2Icon,
@@ -22,7 +14,6 @@ import {
   XIcon,
   LogOutIcon,
   ShieldCheckIcon,
-  ChevronDownIcon,
 } from "lucide-react"
 import { cn } from "cn"
 
@@ -93,34 +84,29 @@ export function AppShell({
         </nav>
 
         <div className="border-t p-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <button className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left outline-none transition-colors hover:bg-sidebar-accent/50">
-                  <div className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                    {initials}
-                  </div>
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-xs font-medium">
-                      {user.name || user.email}
-                    </span>
-                    <span className="truncate text-[10px] text-muted-foreground capitalize">
-                      {user.role || "user"}
-                    </span>
-                  </div>
-                  <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                </button>
-              }
-            />
-            <DropdownMenuContent align="start" side="top">
-              <DropdownMenuGroup>
-                <DropdownMenuItem onClick={handleSignOut} disabled={signingOut}>
-                  {signingOut ? <Spinner className="size-4" /> : <LogOutIcon />}
-                  Keluar
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2">
+            <div className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+              {initials}
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-xs font-medium">
+                {user.name || user.email}
+              </span>
+              <span className="truncate text-[10px] text-muted-foreground capitalize">
+                {user.role || "user"}
+              </span>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-2 w-full"
+            onClick={handleSignOut}
+            disabled={signingOut}
+          >
+            {signingOut ? <Spinner className="size-4" /> : <LogOutIcon className="size-4" />}
+            Keluar
+          </Button>
         </div>
       </aside>
 
