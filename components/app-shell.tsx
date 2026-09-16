@@ -44,7 +44,7 @@ export function AppShell({
   async function handleSignOut() {
     setSigningOut(true)
     await authClient.signOut()
-    router.push("/login")
+    router.push("/")
   }
 
   const displayName = user.name || user.email || "Pengguna"
