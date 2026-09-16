@@ -8,6 +8,15 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Badge } from "@/components/ui/badge"
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuGroup,
+} from "@/components/ui/dropdown-menu"
+import {
   LayoutDashboardIcon,
   ClipboardListIcon,
   CheckCircle2Icon,
@@ -16,6 +25,8 @@ import {
   LogOutIcon,
   ShieldCheckIcon,
   UsersIcon,
+  ChevronDownIcon,
+  UserIcon,
 } from "lucide-react"
 import { cn } from "cn"
 import { roleLabel } from "@/lib/roles"
@@ -120,34 +131,53 @@ export function AppShell({
             <span className="text-sm font-semibold lg:text-base">{pageTitle}</span>
           </div>
 
-          {/* Info user + logout */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="grid size-8 shrink-0 place-items-center rounded-sm bg-primary/10 text-xs font-bold text-primary">
+          {/* Dropdown user */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="flex items-center gap-2 rounded-sm border px-2 py-1.5 text-sm font-medium outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/30"
+            >
+              <div className="grid size-7 shrink-0 place-items-center rounded-sm bg-primary/10 text-xs font-bold text-primary">
                 {initials}
               </div>
-              <div className="hidden flex-col sm:flex">
-                <span className="max-w-40 truncate text-sm font-medium leading-tight">
-                  {displayName}
-                </span>
-                <Badge
-                  variant="secondary"
-                  className="mt-0.5 h-4 w-fit px-1.5 text-[10px] font-medium capitalize"
+              <span className="hidden max-w-32 truncate sm:inline">
+                {displayName}
+              </span>
+              <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col gap-0.5">
+                  <span className="truncate text-sm font-semibold text-foreground">
+                    {displayName}
+                  </span>
+                  <span className="truncate text-xs font-normal text-muted-foreground">
+                    {user.email}
+                  </span>
+                  <Badge
+                    variant="secondary"
+                    className="mt-1 w-fit px-1.5 text-[10px] font-medium"
+                  >
+                    {roleLabel(role)}
+                  </Badge>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  className="cursor-pointer text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={handleSignOut}
+                  disabled={signingOut}
                 >
-                  {roleLabel(role)}
-                </Badge>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSignOut}
-              disabled={signingOut}
-            >
-              {signingOut ? <Spinner className="size-4" /> : <LogOutIcon className="size-4" />}
-              <span className="hidden sm:inline">Keluar</span>
-            </Button>
-          </div>
+                  {signingOut ? (
+                    <Spinner className="size-4" />
+                  ) : (
+                    <LogOutIcon className="size-4" />
+                  )}
+                  {signingOut ? "Keluar..." : "Keluar"}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
 
         {/* Mobile drawer */}
