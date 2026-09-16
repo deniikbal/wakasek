@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import {
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectIcon,
+} from "@/components/ui/select"
+import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
@@ -188,16 +191,22 @@ export function UsersClient({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cu-role">Role</Label>
-                <select
-                  id="cu-role"
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                <Select
                   value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value })}
+                  onValueChange={(v) => setForm({ ...form, role: v as string })}
                 >
-                  {ROLES.map((r) => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
-                  ))}
-                </select>
+                  <SelectTrigger id="cu-role" className="h-9">
+                    <SelectValue />
+                    <SelectIcon />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLES.map((r) => (
+                      <SelectItem key={r.value} value={r.value}>
+                        {r.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               {error && (
                 <p className="text-sm text-destructive">{error}</p>
@@ -222,7 +231,7 @@ export function UsersClient({
           return (
             <Card key={r.value}>
               <CardContent className="flex items-center gap-3 p-4">
-                <div className={`grid size-10 place-items-center rounded-lg ${colors.bg}`}>
+                <div className={`grid size-10 place-items-center rounded-sm ${colors.bg}`}>
                   <Icon className={`size-5 ${colors.color}`} />
                 </div>
                 <div className="flex flex-col">
@@ -265,7 +274,7 @@ export function UsersClient({
                   <td className="px-4 py-3 font-medium">{u.name}</td>
                   <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${roleBadgeClass(u.role)}`}>
+                    <span className={`inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium ${roleBadgeClass(u.role)}`}>
                       {roleLabel(u.role)}
                     </span>
                   </td>
@@ -342,18 +351,24 @@ export function UsersClient({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="eu-role">Role</Label>
-                <select
-                  id="eu-role"
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                <Select
                   value={editForm.role}
-                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                  onValueChange={(v) => setEditForm({ ...editForm, role: v as string })}
                 >
-                  {ROLES.map((r) => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
-                  ))}
-                </select>
+                  <SelectTrigger id="eu-role" className="h-9">
+                    <SelectValue />
+                    <SelectIcon />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLES.map((r) => (
+                      <SelectItem key={r.value} value={r.value}>
+                        {r.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
+              <div className="rounded-sm bg-muted/50 p-3 text-xs text-muted-foreground">
                 Email: <span className="font-medium text-foreground">{editUser.email}</span>
               </div>
             </div>

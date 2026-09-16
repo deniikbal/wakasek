@@ -168,7 +168,7 @@ export default async function DashboardPage() {
                 return (
                   <div
                     key={s.key}
-                    className="flex flex-col items-center gap-2 rounded-lg border p-3 text-center"
+                    className="flex flex-col items-center gap-2 rounded-sm border p-3 text-center"
                   >
                     <Icon className="size-5 text-muted-foreground" />
                     <span className="text-2xl font-bold">{statusMap[s.key] || 0}</span>
@@ -197,9 +197,9 @@ export default async function DashboardPage() {
                       <span className="font-medium">{b.label}</span>
                       <span className="text-muted-foreground">{count} proker</span>
                     </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-2 w-full overflow-hidden rounded-sm bg-muted">
                       <div
-                        className={`h-full rounded-full ${b.color.split(" ")[0]}`}
+                        className={`h-full rounded-sm ${b.color.split(" ")[0]}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -241,7 +241,7 @@ export default async function DashboardPage() {
                 <Link
                   key={p.id}
                   href={`/proker`}
-                  className="flex items-center justify-between gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/50"
+                  className="flex items-center justify-between gap-3 rounded-sm px-2 py-2 transition-colors hover:bg-muted/50"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <Badge variant="outline" className={bidangLabel(p.bidang) ? "" : ""}>

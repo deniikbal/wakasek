@@ -28,7 +28,7 @@ function DropdownMenuContent({
     >
       <MenuPrimitive.Popup
         className={cn(
-          "relative overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[starting-style]:opacity-0 data-[ending-style]:opacity-0",
+          "relative overflow-hidden rounded-sm border bg-popover p-1 text-popover-foreground shadow-md data-[starting-style]:opacity-0 data-[ending-style]:opacity-0",
         )}
         {...(props as React.ComponentProps<typeof MenuPrimitive.Popup>)}
       />

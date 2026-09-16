@@ -11,7 +11,7 @@ export default async function RootPage() {
 
   return (
     <main className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background px-6 text-center">
-      <div className="grid size-16 place-items-center rounded-2xl bg-primary text-primary-foreground">
+      <div className="grid size-16 place-items-center rounded-sm bg-primary text-primary-foreground">
         <ShieldCheckIcon className="size-8" />
       </div>
       <div className="space-y-2">

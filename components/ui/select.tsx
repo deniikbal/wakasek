@@ -23,7 +23,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex w-full items-center justify-between gap-2 rounded-md border border-input bg-input/20 px-2 py-0.5 text-sm transition-colors outline-none hover:bg-input/30 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "flex w-full items-center justify-between gap-2 rounded-sm border border-input bg-input/20 px-2 py-0.5 text-sm transition-colors outline-none hover:bg-input/30 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         size === "default" ? "h-7" : "h-6 text-xs",
         className
       )}
@@ -60,7 +60,7 @@ function SelectContent({
     >
       <SelectPrimitive.Popup
         className={cn(
-          "relative max-h-[var(--available-height)] min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[starting-style]:opacity-0 data-[ending-style]:opacity-0",
+          "relative max-h-[var(--available-height)] min-w-[8rem] overflow-hidden rounded-sm border bg-popover p-1 text-popover-foreground shadow-md data-[starting-style]:opacity-0 data-[ending-style]:opacity-0",
           className
         )}
         {...(props as React.ComponentProps<typeof SelectPrimitive.Popup>)}

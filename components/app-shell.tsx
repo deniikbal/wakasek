@@ -67,7 +67,7 @@ export function AppShell({
       {/* Sidebar — navigasi (desktop) */}
       <aside className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col border-r bg-sidebar lg:flex">
         <div className="flex h-14 items-center gap-2.5 border-b px-4">
-          <div className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
+          <div className="grid size-8 place-items-center rounded-sm bg-primary text-primary-foreground">
             <ShieldCheckIcon className="size-4.5" />
           </div>
           <div className="flex flex-col">
@@ -85,7 +85,7 @@ export function AppShell({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors outline-none",
+                  "flex items-center gap-2.5 rounded-sm px-3 py-2 text-sm font-medium transition-colors outline-none",
                   active
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
@@ -114,7 +114,7 @@ export function AppShell({
             >
               {mobileOpen ? <XIcon className="size-4" /> : <MenuIcon className="size-4" />}
             </Button>
-            <div className="grid size-7 place-items-center rounded-md bg-primary text-primary-foreground lg:hidden">
+            <div className="grid size-7 place-items-center rounded-sm bg-primary text-primary-foreground lg:hidden">
               <ShieldCheckIcon className="size-4" />
             </div>
             <span className="text-sm font-semibold lg:text-base">{pageTitle}</span>
@@ -123,7 +123,7 @@ export function AppShell({
           {/* Info user + logout */}
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+              <div className="grid size-8 shrink-0 place-items-center rounded-sm bg-primary/10 text-xs font-bold text-primary">
                 {initials}
               </div>
               <div className="hidden flex-col sm:flex">
@@ -168,7 +168,7 @@ export function AppShell({
                       href={item.href}
                       onClick={() => setMobileOpen(false)}
                       className={cn(
-                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        "flex items-center gap-2.5 rounded-sm px-3 py-2 text-sm font-medium transition-colors",
                         active
                           ? "bg-sidebar-accent text-sidebar-accent-foreground"
                           : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"

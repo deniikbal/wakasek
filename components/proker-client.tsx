@@ -311,13 +311,13 @@ export function ProkerClient({
 
       {/* Error banner */}
       {error && (
-        <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+        <div className="flex items-center gap-2 rounded-sm bg-destructive/10 p-3 text-sm text-destructive">
           <AlertCircleIcon className="size-4 shrink-0" /> {error}
         </div>
       )}
 
       {/* Table */}
-      <div className="rounded-xl border">
+      <div className="rounded-sm border">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Spinner className="size-6" />
@@ -474,7 +474,7 @@ export function ProkerClient({
                       type="button"
                       onClick={() => toggleBulan(bulan)}
                       className={
-                        "rounded-md border px-2.5 py-1 text-xs font-medium transition-colors " +
+                        "rounded-sm border px-2.5 py-1 text-xs font-medium transition-colors " +
                         (selected
                           ? "border-primary bg-primary/10 text-primary"
                           : "border-border text-muted-foreground hover:bg-muted")
@@ -557,7 +557,7 @@ export function ProkerClient({
             </div>
 
             {formError && (
-              <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              <div className="flex items-center gap-2 rounded-sm bg-destructive/10 p-3 text-sm text-destructive">
                 <AlertCircleIcon className="size-4 shrink-0" /> {formError}
               </div>
             )}
@@ -588,7 +588,7 @@ export function ProkerClient({
             </DialogDescription>
           </DialogHeader>
           {formError && (
-            <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            <div className="flex items-center gap-2 rounded-sm bg-destructive/10 p-3 text-sm text-destructive">
               <AlertCircleIcon className="size-4 shrink-0" /> {formError}
             </div>
           )}

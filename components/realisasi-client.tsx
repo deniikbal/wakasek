@@ -199,13 +199,13 @@ export function RealisasiClient() {
 
       {/* Error banner */}
       {error && (
-        <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+        <div className="flex items-center gap-2 rounded-sm bg-destructive/10 p-3 text-sm text-destructive">
           <AlertCircleIcon className="size-4 shrink-0" /> {error}
         </div>
       )}
 
       {/* Table */}
-      <div className="rounded-xl border">
+      <div className="rounded-sm border">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Spinner className="size-6" />
@@ -293,7 +293,7 @@ export function RealisasiClient() {
                                 .map((r) => (
                                   <div
                                     key={r.id}
-                                    className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2"
+                                    className="flex items-center justify-between gap-3 rounded-sm border bg-background px-3 py-2"
                                   >
                                     <div className="flex items-center gap-3">
                                       <Badge variant={statusVariant(r.status)}>
@@ -413,7 +413,7 @@ export function RealisasiClient() {
             </div>
 
             {formError && (
-              <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              <div className="flex items-center gap-2 rounded-sm bg-destructive/10 p-3 text-sm text-destructive">
                 <AlertCircleIcon className="size-4 shrink-0" /> {formError}
               </div>
             )}

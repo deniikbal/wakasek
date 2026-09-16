@@ -78,7 +78,7 @@ function LoginPageInner() {
         <div className="flex flex-1 items-center justify-center py-10">
           <form onSubmit={submit} className="w-full max-w-sm space-y-4">
             <div className="space-y-1.5">
-              <div className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary">
+              <div className="grid size-11 place-items-center rounded-sm bg-primary/10 text-primary">
                 <ShieldCheckIcon className="size-5" />
               </div>
               <h1 className="pt-2 text-xl font-bold tracking-tight">
@@ -107,7 +107,7 @@ function LoginPageInner() {
             </div>
 
             {error ? (
-              <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              <div className="flex items-center gap-2 rounded-sm bg-destructive/10 p-3 text-sm text-destructive">
                 <AlertCircleIcon className="size-4 shrink-0" /> {error}
               </div>
             ) : null}
@@ -128,7 +128,7 @@ function LoginPageInner() {
 
       <div className="relative hidden flex-col justify-between overflow-hidden bg-primary p-12 text-primary-foreground lg:order-1 lg:flex">
         <div className="flex items-center gap-2.5">
-          <div className="grid size-9 place-items-center rounded-lg bg-black/15">
+          <div className="grid size-9 place-items-center rounded-sm bg-black/15">
             <ShieldCheckIcon className="size-5" />
           </div>
           <div>
