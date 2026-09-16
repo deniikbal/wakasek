@@ -6,6 +6,7 @@ import { useState } from "react"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import { Badge } from "@/components/ui/badge"
 import {
   LayoutDashboardIcon,
   ClipboardListIcon,
@@ -17,6 +18,7 @@ import {
   UsersIcon,
 } from "lucide-react"
 import { cn } from "cn"
+import { roleLabel } from "@/lib/roles"
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
@@ -43,15 +45,26 @@ export function AppShell({
     router.push("/login")
   }
 
-  const initials = (user.name || user.email || "?")
+  const displayName = user.name || user.email || "Pengguna"
+  const initials = displayName
     .split(/[\s@]+/)
     .slice(0, 2)
     .map((p) => p.charAt(0).toUpperCase())
     .join("")
+  const role = user.role || "user"
+
+  const pageTitle =
+    NAV_ITEMS.find(
+      (item) => pathname === item.href || pathname.startsWith(item.href + "/")
+    )?.label || "Portal Wakasek"
+
+  const navLinks = NAV_ITEMS.filter(
+    (item) => !item.adminOnly || role === "admin"
+  )
 
   return (
     <div className="flex min-h-svh w-full">
-      {/* Sidebar — desktop */}
+      {/* Sidebar — navigasi (desktop) */}
       <aside className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col border-r bg-sidebar lg:flex">
         <div className="flex h-14 items-center gap-2.5 border-b px-4">
           <div className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
@@ -64,7 +77,7 @@ export function AppShell({
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 p-3">
-          {NAV_ITEMS.filter((item) => !item.adminOnly || user.role === "admin").map((item) => {
+          {navLinks.map((item) => {
             const active = pathname === item.href || pathname.startsWith(item.href + "/")
             const Icon = item.icon
             return (
@@ -84,64 +97,69 @@ export function AppShell({
             )
           })}
         </nav>
-
-        <div className="border-t p-3">
-          <div className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2">
-            <div className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-              {initials}
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-xs font-medium">
-                {user.name || user.email}
-              </span>
-              <span className="truncate text-[10px] text-muted-foreground capitalize">
-                {user.role || "user"}
-              </span>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-2 w-full"
-            onClick={handleSignOut}
-            disabled={signingOut}
-          >
-            {signingOut ? <Spinner className="size-4" /> : <LogOutIcon className="size-4" />}
-            Keluar
-          </Button>
-        </div>
       </aside>
 
-      {/* Main content area */}
+      {/* Kolom kanan: navbar atas + konten */}
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top bar — mobile */}
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background px-4 lg:hidden">
+        {/* Navbar atas */}
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-3 border-b bg-background px-4">
           <div className="flex items-center gap-2">
+            {/* Hamburger — mobile saja */}
             <Button
               variant="ghost"
               size="icon"
+              className="lg:hidden"
               onClick={() => setMobileOpen((v) => !v)}
-              aria-label="Menu"
+              aria-label="Menu navigasi"
             >
               {mobileOpen ? <XIcon className="size-4" /> : <MenuIcon className="size-4" />}
             </Button>
-            <div className="grid size-7 place-items-center rounded-md bg-primary text-primary-foreground">
+            <div className="grid size-7 place-items-center rounded-md bg-primary text-primary-foreground lg:hidden">
               <ShieldCheckIcon className="size-4" />
             </div>
-            <span className="text-sm font-bold">Portal Wakasek</span>
+            <span className="text-sm font-semibold lg:text-base">{pageTitle}</span>
+          </div>
+
+          {/* Info user + logout */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                {initials}
+              </div>
+              <div className="hidden flex-col sm:flex">
+                <span className="max-w-40 truncate text-sm font-medium leading-tight">
+                  {displayName}
+                </span>
+                <Badge
+                  variant="secondary"
+                  className="mt-0.5 h-4 w-fit px-1.5 text-[10px] font-medium capitalize"
+                >
+                  {roleLabel(role)}
+                </Badge>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              disabled={signingOut}
+            >
+              {signingOut ? <Spinner className="size-4" /> : <LogOutIcon className="size-4" />}
+              <span className="hidden sm:inline">Keluar</span>
+            </Button>
           </div>
         </header>
 
         {/* Mobile drawer */}
         {mobileOpen ? (
-          <div className="fixed inset-0 z-40 lg:hidden">
+          <div className="fixed inset-0 top-14 z-40 lg:hidden">
             <div
               className="absolute inset-0 bg-black/50"
               onClick={() => setMobileOpen(false)}
             />
-            <aside className="absolute left-0 top-14 h-[calc(100svh-3.5rem)] w-64 border-r bg-sidebar shadow-xl">
+            <aside className="absolute left-0 top-0 h-full w-64 border-r bg-sidebar shadow-xl">
               <nav className="flex flex-col gap-1 p-3">
-                {NAV_ITEMS.filter((item) => !item.adminOnly || user.role === "admin").map((item) => {
+                {navLinks.map((item) => {
                   const active = pathname === item.href || pathname.startsWith(item.href + "/")
                   const Icon = item.icon
                   return (
@@ -162,22 +180,11 @@ export function AppShell({
                   )
                 })}
               </nav>
-              <div className="mt-auto border-t p-3">
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleSignOut}
-                  disabled={signingOut}
-                >
-                  {signingOut ? <Spinner /> : <LogOutIcon />}
-                  Keluar
-                </Button>
-              </div>
             </aside>
           </div>
         ) : null}
 
-        {/* Page content */}
+        {/* Konten halaman */}
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-7xl p-4 sm:p-6 lg:p-8">
             {children}
