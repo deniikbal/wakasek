@@ -11,6 +11,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/login") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/setup-status") ||
+    pathname.startsWith("/api/public-stats") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/)

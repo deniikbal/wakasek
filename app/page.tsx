@@ -232,7 +232,7 @@ export default async function RootPage() {
             <CardContent className="p-5">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground">Skt Terlaksana</p>
+                  <p className="text-xs font-medium text-muted-foreground">Kegiatan Terlaksana</p>
                   <p className="text-3xl font-bold tracking-tight">{terlaksana}</p>
                   <p className="text-xs text-muted-foreground">
                     dari {totalRealisasi} total realisasi
@@ -518,7 +518,7 @@ export default async function RootPage() {
                 { key: "terlaksana", label: "Terlaksana", color: "text-green-700 bg-green-50 border-green-200" },
                 { key: "belum_dimulai", label: "Belum Dimulai", color: "text-gray-700 bg-gray-50 border-gray-200" },
                 { key: "ditunda", label: "Ditunda", color: "text-amber-700 bg-amber-50 border-amber-200" },
-                { key: "tidak_jjadi", label: "Tidak Jadi", color: "text-red-700 bg-red-50 border-red-200" },
+                { key: "tidak_jadi", label: "Tidak Jadi", color: "text-red-700 bg-red-50 border-red-200" },
               ].map((s) => {
                 const count = data.statusMap[s.key] || 0
                 const pct = Math.round((count / totalRealisasi) * 100)
