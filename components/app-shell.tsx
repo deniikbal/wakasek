@@ -8,15 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Badge } from "@/components/ui/badge"
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu"
-import {
   LayoutDashboardIcon,
   ClipboardListIcon,
   CheckCircle2Icon,
@@ -26,7 +17,6 @@ import {
   ShieldCheckIcon,
   UsersIcon,
   ChevronDownIcon,
-  UserIcon,
 } from "lucide-react"
 import { cn } from "cn"
 import { roleLabel } from "@/lib/roles"
@@ -48,6 +38,7 @@ export function AppShell({
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
 
   async function handleSignOut() {
@@ -132,8 +123,10 @@ export function AppShell({
           </div>
 
           {/* Dropdown user */}
-          <DropdownMenu>
-            <DropdownMenuTrigger
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen((v) => !v)}
               className="flex items-center gap-2 rounded-sm border px-2 py-1.5 text-sm font-medium outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/30"
             >
               <div className="grid size-7 shrink-0 place-items-center rounded-sm bg-primary/10 text-xs font-bold text-primary">
@@ -143,41 +136,50 @@ export function AppShell({
                 {displayName}
               </span>
               <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col gap-0.5">
-                  <span className="truncate text-sm font-semibold text-foreground">
-                    {displayName}
-                  </span>
-                  <span className="truncate text-xs font-normal text-muted-foreground">
-                    {user.email}
-                  </span>
-                  <Badge
-                    variant="secondary"
-                    className="mt-1 w-fit px-1.5 text-[10px] font-medium"
+            </button>
+
+            {userMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setUserMenuOpen(false)}
+                />
+                <div className="absolute right-0 top-full z-50 mt-1 w-56 overflow-hidden rounded-sm border bg-popover p-1 text-popover-foreground shadow-md">
+                  <div className="flex flex-col gap-0.5 px-2 py-2">
+                    <span className="truncate text-sm font-semibold text-foreground">
+                      {displayName}
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {user.email}
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className="mt-1 w-fit px-1.5 text-[10px] font-medium"
+                    >
+                      {roleLabel(role)}
+                    </Badge>
+                  </div>
+                  <div className="-mx-1 my-1 h-px bg-border" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen(false)
+                      handleSignOut()
+                    }}
+                    disabled={signingOut}
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-xs font-medium text-destructive outline-none transition-colors hover:bg-destructive/10 disabled:opacity-50"
                   >
-                    {roleLabel(role)}
-                  </Badge>
+                    {signingOut ? (
+                      <Spinner className="size-4" />
+                    ) : (
+                      <LogOutIcon className="size-4" />
+                    )}
+                    {signingOut ? "Keluar..." : "Keluar"}
+                  </button>
                 </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem
-                  className="cursor-pointer text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={handleSignOut}
-                  disabled={signingOut}
-                >
-                  {signingOut ? (
-                    <Spinner className="size-4" />
-                  ) : (
-                    <LogOutIcon className="size-4" />
-                  )}
-                  {signingOut ? "Keluar..." : "Keluar"}
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </>
+            )}
+          </div>
         </header>
 
         {/* Mobile drawer */}
