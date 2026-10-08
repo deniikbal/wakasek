@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/password-input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +22,7 @@ import {
   UsersIcon,
   MailIcon,
   LockIcon,
+
   UserIcon,
   BookOpenIcon,
   GraduationCapIcon,
@@ -41,7 +43,6 @@ function LoginPageInner() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [showPassword, setShowPassword] = useState(false)
   const [stats, setStats] = useState({ proker: 0, bidang: 0, terlaksana: 0 })
 
   useEffect(() => {
@@ -261,26 +262,15 @@ function LoginPageInner() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <LockIcon className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    placeholder="••••••••"
-                    className="px-8"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    {showPassword ? "Sembunyi" : "Lihat"}
-                  </button>
-                </div>
+                <PasswordInput
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  placeholder="••••••••"
+                  icon={<LockIcon className="size-3.5" />}
+                />
               </div>
 
               {error && (

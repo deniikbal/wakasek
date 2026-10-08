@@ -17,7 +17,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Spinner } from "@/components/ui/spinner"
-import { UsersIcon, ShieldCheckIcon, PlusIcon, Trash2Icon, PencilIcon, GraduationCapIcon, BookOpenIcon, WrenchIcon, MegaphoneIcon } from "lucide-react"
+import { PasswordInput } from "@/components/password-input"
+import { UsersIcon, ShieldCheckIcon, PlusIcon, Trash2Icon, PencilIcon, GraduationCapIcon, BookOpenIcon, WrenchIcon, MegaphoneIcon, KeyRoundIcon } from "lucide-react"
 import { ROLES, roleLabel, roleBadgeClass } from "@/lib/roles"
 
 // Icon per role (hanya untuk UI client)
@@ -68,7 +69,8 @@ export function UsersClient({
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "kurikulum" })
 
   // Form edit
-  const [editForm, setEditForm] = useState({ name: "", role: "kurikulum" })
+  const [editForm, setEditForm] = useState({ name: "", role: "kurikulum", password: "" })
+  const [saving, setSaving] = useState(false)
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase()
@@ -110,20 +112,6 @@ export function UsersClient({
     }
   }
 
-  async function handleUpdateName(userId: string, name: string) {
-    const res = await fetch(`/api/users/${userId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    })
-    if (res.ok) {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, name } : u))
-      )
-      setEditUser(null)
-    }
-  }
-
   async function handleDelete(userId: string) {
     if (!confirm("Yakin hapus user ini?")) return
     const res = await fetch(`/api/users/${userId}`, { method: "DELETE" })
@@ -135,7 +123,46 @@ export function UsersClient({
 
   function openEdit(u: UserRow) {
     setEditUser(u)
-    setEditForm({ name: u.name, role: u.role })
+    setEditForm({ name: u.name, role: u.role, password: "" })
+    setError("")
+  }
+
+  async function handleUpdatePassword(userId: string, password: string) {
+    const res = await fetch(`/api/users/${userId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || "Gagal mengubah password")
+  }
+
+  async function submitEdit() {
+    if (!editUser) return
+    setSaving(true)
+    setError("")
+    try {
+      if (editForm.name !== editUser.name) {
+        await fetch(`/api/users/${editUser.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: editForm.name }),
+        })
+        setUsers((prev) => prev.map((u) => (u.id === editUser.id ? { ...u, name: editForm.name } : u)))
+      }
+      if (editForm.role !== editUser.role) {
+        await handleUpdateRole(editUser.id, editForm.role)
+      }
+      if (editForm.password) {
+        await handleUpdatePassword(editUser.id, editForm.password)
+      }
+      setEditUser(null)
+      router.refresh()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Gagal menyimpan")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -181,12 +208,13 @@ export function UsersClient({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cu-pass">Password</Label>
-                <Input
+                <PasswordInput
                   id="cu-pass"
-                  type="password"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   placeholder="Min. 6 karakter"
+                  required
+                  minLength={6}
                 />
               </div>
               <div className="space-y-2">
@@ -368,28 +396,35 @@ export function UsersClient({
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="eu-pass">
+                  Password Baru
+                  <span className="ml-1 font-normal text-muted-foreground">(kosongkan jika tidak diubah)</span>
+                </Label>
+                <PasswordInput
+                  id="eu-pass"
+                  value={editForm.password}
+                  onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                  placeholder="Min. 6 karakter"
+                  minLength={6}
+                  icon={<KeyRoundIcon className="size-3.5" />}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Mengubah password akan mengeluarkan user tersebut dari semua sesi aktifnya.
+                </p>
+              </div>
               <div className="rounded-sm bg-muted/50 p-3 text-xs text-muted-foreground">
                 Email: <span className="font-medium text-foreground">{editUser.email}</span>
               </div>
+              {error && (
+                <p className="text-sm text-destructive">{error}</p>
+              )}
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditUser(null)}>Batal</Button>
-            <Button
-              onClick={() => {
-                if (!editUser) return
-                let changed = false
-                if (editForm.name !== editUser.name) {
-                  handleUpdateName(editUser.id, editForm.name)
-                  changed = true
-                }
-                if (editForm.role !== editUser.role) {
-                  handleUpdateRole(editUser.id, editForm.role)
-                  changed = true
-                }
-                if (!changed) setEditUser(null)
-              }}
-            >
+            <Button variant="outline" disabled={saving} onClick={() => setEditUser(null)}>Batal</Button>
+            <Button onClick={submitEdit} disabled={saving}>
+              {saving ? <Spinner className="size-4" /> : null}
               Simpan
             </Button>
           </DialogFooter>
